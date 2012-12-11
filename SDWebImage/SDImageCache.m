@@ -13,6 +13,8 @@
 #import <mach/mach.h>
 #import <mach/mach_host.h>
 
+#define kMaxCacheCost   360100.0f
+
 static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
 
 @interface SDImageCache ()
@@ -104,7 +106,11 @@ static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
         return;
     }
 
-    [self.memCache setObject:image forKey:key cost:image.size.height * image.size.width * image.scale];
+    CGFloat cost = image.size.height * image.size.width * image.scale;
+    if (cost < kMaxCacheCost)
+    {
+        [self.memCache setObject:image forKey:key cost:cost];
+    }
 
     if (toDisk)
     {
@@ -172,9 +178,10 @@ static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
     {
         UIImage *diskImage = [UIImage decodedImageWithImage:SDScaledImageForPath(key, [NSData dataWithContentsOfFile:[self cachePathForKey:key]])];
 
-        if (diskImage)
+        CGFloat cost = diskImage.size.height * diskImage.size.width * diskImage.scale;
+        if (diskImage && cost < kMaxCacheCost)
         {
-            [self.memCache setObject:diskImage forKey:key cost:image.size.height * image.size.width * image.scale];
+            [self.memCache setObject:diskImage forKey:key cost:cost];
         }
 
         dispatch_async(dispatch_get_main_queue(), ^

@@ -127,4 +127,6 @@ typedef enum SDImageCacheType SDImageCacheType;
  */
 - (int)getDiskCount;
 
+- (NSString *)cachePathForKey:(NSString *)key;
+
 @end
