@@ -39,7 +39,7 @@
         bitmapInfo &= ~kCGBitmapAlphaInfoMask;
         
         // Set noneSkipFirst.
-        bitmapInfo |= kCGImageAlphaNoneSkipFirst;
+        bitmapInfo |= kCGImageAlphaPremultipliedFirst;
     }
 
     // It calculates the bytes-per-row based on the bitsPerComponent and width arguments.

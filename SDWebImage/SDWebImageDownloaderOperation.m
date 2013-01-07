@@ -43,6 +43,9 @@
         _executing = NO;
         _finished = NO;
         _expectedSize = 0;
+        
+        if (options & SDWebImageDownloaderLowPriority)
+            [self setQueuePriority:NSOperationQueuePriorityLow];
     }
     return self;
 }
