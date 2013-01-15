@@ -50,6 +50,7 @@
                                                  0,
                                                  colorSpace,
                                                  bitmapInfo);
+    CGColorSpaceRelease(colorSpace);
 
     // If failed, return undecompressed image
     if (!context) return image;
