@@ -156,6 +156,11 @@ static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
     [self storeImage:image imageData:nil forKey:key toDisk:toDisk];
 }
 
+- (UIImage *)imageFromMemoryCacheForKey:(NSString *)key
+{
+    return [self.memCache objectForKey:key];
+}
+
 - (void)queryDiskCacheForKey:(NSString *)key done:(void (^)(UIImage *image, SDImageCacheType cacheType))doneBlock
 {
     if (!doneBlock) return;
@@ -167,7 +172,7 @@ static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
     }
 
     // First check the in-memory cache...
-    UIImage *image = [self.memCache objectForKey:key];
+    UIImage *image = [self imageFromMemoryCacheForKey:key];
     if (image)
     {
         doneBlock(image, SDImageCacheTypeMemory);
