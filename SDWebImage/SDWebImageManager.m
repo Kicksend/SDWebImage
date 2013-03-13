@@ -94,19 +94,27 @@
     {
         if (operation.isCancelled) return;
 
-        if (image)
+        if ((!image || options & SDWebImageRefreshCached) && (![self.delegate respondsToSelector:@selector(imageManager:shouldDownloadImageForURL:)] || [self.delegate imageManager:self shouldDownloadImageForURL:url]))
         {
-            completedBlock(image, nil, cacheType, YES);
-            @synchronized(self.runningOperations)
+            if (image && options & SDWebImageRefreshCached)
             {
-                [self.runningOperations removeObject:operation];
+                // If image was found in the cache bug SDWebImageRefreshCached is provided, notify about the cached image
+                // AND try to re-download it in order to let a chance to NSURLCache to refresh it from server.
+                completedBlock(image, nil, cacheType, YES);
             }
-        }
-        else if (![self.delegate respondsToSelector:@selector(imageManager:shouldDownloadImageForURL:)] || [self.delegate imageManager:self shouldDownloadImageForURL:url])
-        {
+
+            // download if no image or requested to refresh anyway, and download allowed by delegate
             SDWebImageDownloaderOptions downloaderOptions = 0;
             if (options & SDWebImageLowPriority) downloaderOptions |= SDWebImageDownloaderLowPriority;
             if (options & SDWebImageProgressiveDownload) downloaderOptions |= SDWebImageDownloaderProgressiveDownload;
+            if (options & SDWebImageRefreshCached) downloaderOptions |= SDWebImageDownloaderUseNSURLCache;
+            if (image && options & SDWebImageRefreshCached)
+            {
+                // force progressive off if image already cached but forced refreshing
+                downloaderOptions &= ~SDWebImageDownloaderProgressiveDownload;
+                // ignore image read from NSURLCache if image if cached but force refreshing
+                downloaderOptions |= SDWebImageDownloaderIgnoreCachedResponse;
+            }
             __block id<SDWebImageOperation> subOperation = [self.imageDownloader downloadImageWithURL:url options:downloaderOptions progress:progressBlock completed:^(UIImage *downloadedImage, NSData *data, NSError *error, BOOL finished)
             {
                 if (weakOperation.cancelled)
@@ -127,9 +135,13 @@
                 }
                 else
                 {
-                    const BOOL cacheOnDisk = !(options & SDWebImageCacheMemoryOnly);
+                    BOOL cacheOnDisk = !(options & SDWebImageCacheMemoryOnly);
 
-                    if (downloadedImage && [self.delegate respondsToSelector:@selector(imageManager:transformDownloadedImage:withURL:)])
+                    if (options & SDWebImageRefreshCached && image && !downloadedImage)
+                    {
+                        // Image refresh hit the NSURLCache cache, do not call the completion block
+                    }
+                    else if (downloadedImage && [self.delegate respondsToSelector:@selector(imageManager:transformDownloadedImage:withURL:)])
                     {
                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^
                         {
@@ -142,7 +154,7 @@
 
                             if (transformedImage && finished)
                             {
-                                [self.imageCache storeImage:transformedImage imageData:data forKey:key toDisk:cacheOnDisk];
+                                [self.imageCache storeImage:transformedImage imageData:nil forKey:key toDisk:cacheOnDisk];
                             }
                         });
                     }
@@ -166,6 +178,14 @@
                 }
             }];
             operation.cancelBlock = ^{[subOperation cancel];};
+        }
+        else if (image)
+        {
+            completedBlock(image, nil, cacheType, YES);
+            @synchronized(self.runningOperations)
+            {
+                [self.runningOperations removeObject:operation];
+            }
         }
         else
         {
