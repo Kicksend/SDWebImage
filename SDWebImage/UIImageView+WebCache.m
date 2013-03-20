@@ -82,10 +82,10 @@ static char *urlKey = "urlKey";
 {
     // Cancel in progress downloader from queue
     id<SDWebImageOperation> operation = objc_getAssociatedObject(self, &operationKey);
+    objc_setAssociatedObject(self, &urlKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     if (operation)
     {
         [operation cancel];
-        objc_setAssociatedObject(self, &urlKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         objc_setAssociatedObject(self, &operationKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
