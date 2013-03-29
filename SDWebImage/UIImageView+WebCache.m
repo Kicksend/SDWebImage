@@ -10,7 +10,6 @@
 #import "objc/runtime.h"
 
 static char *operationKey = "operationKey";
-static char *urlKey = "urlKey";
 
 @implementation UIImageView (WebCache)
 
@@ -46,10 +45,6 @@ static char *urlKey = "urlKey";
 
 - (void)setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholder options:(SDWebImageOptions)options progress:(SDWebImageDownloaderProgressBlock)progressBlock completed:(SDWebImageCompletedBlock)completedBlock;
 {
-    NSURL *lastURL = objc_getAssociatedObject(self, &urlKey);
-    if ([lastURL isEqual:url])
-        return;
-
     [self cancelCurrentImageLoad];
 
     self.image = placeholder;
@@ -70,10 +65,8 @@ static char *urlKey = "urlKey";
             {
                 completedBlock(image, error, cacheType);
             }
-            objc_setAssociatedObject(self, &urlKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }];
 
-        objc_setAssociatedObject(self, &urlKey, url, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         objc_setAssociatedObject(self, &operationKey, operation, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
@@ -82,7 +75,6 @@ static char *urlKey = "urlKey";
 {
     // Cancel in progress downloader from queue
     id<SDWebImageOperation> operation = objc_getAssociatedObject(self, &operationKey);
-    objc_setAssociatedObject(self, &urlKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     if (operation)
     {
         [operation cancel];
