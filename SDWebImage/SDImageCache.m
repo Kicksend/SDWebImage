@@ -204,9 +204,10 @@ static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
         @autoreleasepool
         {
             UIImage *diskImage = [UIImage decodedImageWithImage:SDScaledImageForPath(key, [NSData dataWithContentsOfFile:[self cachePathForKey:key]])];
-            if (diskImage && cost < kMaxCacheCost))
+
+            CGFloat cost = diskImage.size.height * diskImage.size.width * diskImage.scale;
+            if (diskImage && cost < kMaxCacheCost)
             {
-                CGFloat cost = diskImage.size.height * diskImage.size.width * diskImage.scale;
                 [self.memCache setObject:diskImage forKey:key cost:cost];
             }
 
